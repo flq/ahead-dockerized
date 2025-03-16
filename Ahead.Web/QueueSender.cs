@@ -4,7 +4,7 @@ using RabbitMQ.Client;
 
 namespace Ahead.Web;
 
-public class QueueSender(IConnection connection)
+public class QueueSender(IConnection connection, ILogger<QueueSender> logger)
 {
     private readonly JsonSerializerOptions options = new(JsonSerializerDefaults.Web)
     {
@@ -24,6 +24,7 @@ public class QueueSender(IConnection connection)
         var body = JsonSerializer.SerializeToUtf8Bytes(message, options: options);
         
         await channel.BasicPublishAsync(exchange: string.Empty, routingKey: queueName, body: body);
+        logger.LogInformation("Sent message of type {messageType} on queue {queueName}", typeof(T).Name, queueName);
     }
     
 }
