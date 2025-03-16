@@ -9,10 +9,15 @@ public class SerializationFacts
     [Fact]
     public void TheMessagingSerializationWorks()
     {
-        var body = JsonSerializer.SerializeToUtf8Bytes(new CalculationRequest { Calculation = "xyz" });
-        var deserializedBody = JsonSerializer.Deserialize<CalculationRequest>(body.AsMemory().Span);
+        var time = new TestTimeProvider(DateTime.UtcNow);
+        var body = JsonSerializer.SerializeToUtf8Bytes(new ReportRequest
+        {
+            Type = "report",
+            RelevantDate = time.FixedDateTime
+        });
+        var deserializedBody = JsonSerializer.Deserialize<ReportRequest>(body.AsMemory().Span);
         Assert.NotNull(deserializedBody);
-        Assert.Equal("xyz", deserializedBody.Calculation);
+        Assert.Equal(time.FixedDateTime, deserializedBody.RelevantDate);
     }
 
 }
