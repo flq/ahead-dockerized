@@ -1,38 +1,48 @@
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Threading.Channels;
+using Ahead.Common;
 using Microsoft.Extensions.Logging;
+using OpenTelemetry;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
 namespace Ahead.Backend;
 
+file static class SerializationHelper
+{
+    public static readonly JsonSerializerOptions Options = new(JsonSerializerDefaults.Web)
+    {
+        WriteIndented = false
+    };
+}
+
 public class QueueListener<T>(IConnection connection, ILogger<QueueListener<T>> logger)
 {
-    private readonly JsonSerializerOptions options = new(JsonSerializerDefaults.Web)
-    {
-        WriteIndented = false,
-    };
-    
-    public async IAsyncEnumerable<T> StartListening(string queueName, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    public async IAsyncEnumerable<T> StartListening(string queueName,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         var dotnetChannel = Channel.CreateUnbounded<T>();
         var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
 
         await channel.QueueDeclareAsync(
-        queue: queueName, 
-        durable: false, 
-        exclusive: false, 
-        autoDelete: false, 
-        arguments: null, 
+        queueName,
+        false,
+        false,
+        false,
         cancellationToken: cancellationToken);
-        
+
         var consumer = new AsyncEventingBasicConsumer(channel);
         consumer.ReceivedAsync += (_, ea) =>
         {
             try
             {
-                var message = JsonSerializer.Deserialize<T>(ea.Body.Span, options);
+                var parentContext = ea.BasicProperties.Headers.TryExtractPropagationContext();
+                Baggage.Current = parentContext.Baggage;
+                using var activity = OTelUtilities.MessagingActivitySource.StartActivity($"{ea.RoutingKey} receive", ActivityKind.Consumer, parentContext.ActivityContext);
+
+                var message = JsonSerializer.Deserialize<T>(ea.Body.Span, SerializationHelper.Options);
                 if (message == null)
                 {
                     logger.LogWarning("Received null message on queue {queueName}", queueName);
@@ -45,9 +55,9 @@ public class QueueListener<T>(IConnection connection, ILogger<QueueListener<T>> 
                 logger.LogError(x, "Received json exception on queue {queueName}", queueName);
             }
             return Task.CompletedTask;
-            
+
         };
-        _ = channel.BasicConsumeAsync(queueName, autoAck: true, consumer: consumer, cancellationToken: cancellationToken);
+        _ = channel.BasicConsumeAsync(queueName, true, consumer, cancellationToken);
         logger.LogInformation("Listening for {queueName}", queueName);
         await foreach (var message in dotnetChannel.Reader.ReadAllAsync(cancellationToken))
         {

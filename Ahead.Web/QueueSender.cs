@@ -1,18 +1,22 @@
+using System.Diagnostics;
 using System.Text.Json;
-using System.Text.Json.Serialization;
+using Ahead.Common;
 using RabbitMQ.Client;
 
 namespace Ahead.Web;
 
 public class QueueSender(IConnection connection, ILogger<QueueSender> logger)
 {
-    private readonly JsonSerializerOptions options = new(JsonSerializerDefaults.Web)
+    private static readonly JsonSerializerOptions Options = new(JsonSerializerDefaults.Web)
     {
         WriteIndented = false,
     };
     
     public async Task Send<T>(string queueName, T message)
     {
+        var parentContext = Activity.Current?.Context ?? default;
+        using var activity = OTelUtilities.MessagingActivitySource.StartActivity($"{queueName} send", ActivityKind.Producer, parentContext);
+        
         await using var channel = await connection.CreateChannelAsync();
         await channel.QueueDeclareAsync(
             queue: queueName, 
@@ -21,9 +25,19 @@ public class QueueSender(IConnection connection, ILogger<QueueSender> logger)
             autoDelete: false, 
             arguments: null);
         
-        var body = JsonSerializer.SerializeToUtf8Bytes(message, options: options);
-        
-        await channel.BasicPublishAsync(exchange: string.Empty, routingKey: queueName, body: body);
+        var body = JsonSerializer.SerializeToUtf8Bytes(message, options: Options);
+
+        var properties = new BasicProperties
+        {
+            Headers = new Dictionary<string, object?>()
+        };
+
+        activity.TryInjectTraceContextIntoDictionary(properties.Headers);
+
+        await channel.BasicPublishAsync(
+            new PublicationAddress(string.Empty, string.Empty, queueName), 
+            properties, 
+            body);
         logger.LogInformation("Sent message of type {messageType} on queue {queueName}", typeof(T).Name, queueName);
     }
     

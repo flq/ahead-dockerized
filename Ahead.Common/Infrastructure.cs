@@ -14,6 +14,10 @@ public static class Infrastructure
         /*
          * https://learn.microsoft.com/en-us/dotnet/core/diagnostics/observability-otlp-example
          * OTEL Export is necessary to bring the dashboard to life with tracing etc.
+         *
+         * Tracing stuff yourself
+         * https://github.com/open-telemetry/opentelemetry-dotnet/tree/main/src/OpenTelemetry.Api#instrumenting-a-libraryapplication-with-net-activity-api
+         * 
          */
         builder.Logging.AddOpenTelemetry(logging =>
         {
@@ -31,7 +35,8 @@ public static class Infrastructure
             })
             .WithTracing(tracing =>
             {
-                tracing.AddSource(builder.Environment.ApplicationName)
+                tracing
+                    .AddSource(builder.Environment.ApplicationName, OTelUtilities.MessagingActivitySource.Name)
                     .AddAspNetCoreInstrumentation(trace =>
                         // Don't trace requests to the health endpoint to avoid filling the dashboard with noise
                         trace.Filter = httpContext =>
