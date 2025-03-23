@@ -7,4 +7,9 @@ public static class Constants
         public const string Basic = "queue.basic";
     }
 
+    public static class BroadcastExchanges
+    {
+        public const string UserEvents = "events.user";
+    }
+
 }

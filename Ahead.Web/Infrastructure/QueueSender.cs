@@ -3,7 +3,7 @@ using System.Text.Json;
 using Ahead.Common;
 using RabbitMQ.Client;
 
-namespace Ahead.Web;
+namespace Ahead.Web.Infrastructure;
 
 public class QueueSender(IConnection connection, ILogger<QueueSender> logger)
 {
