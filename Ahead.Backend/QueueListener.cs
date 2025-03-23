@@ -10,14 +10,6 @@ using RabbitMQ.Client.Events;
 
 namespace Ahead.Backend;
 
-file static class SerializationHelper
-{
-    public static readonly JsonSerializerOptions Options = new(JsonSerializerDefaults.Web)
-    {
-        WriteIndented = false
-    };
-}
-
 public class QueueListener<T>(IConnection connection, ILogger<QueueListener<T>> logger)
 {
     public async IAsyncEnumerable<T> StartListening(string queueName,
@@ -42,7 +34,7 @@ public class QueueListener<T>(IConnection connection, ILogger<QueueListener<T>> 
                 Baggage.Current = parentContext.Baggage;
                 using var activity = OTelUtilities.MessagingActivitySource.StartActivity($"{ea.RoutingKey} receive", ActivityKind.Consumer, parentContext.ActivityContext);
 
-                var message = JsonSerializer.Deserialize<T>(ea.Body.Span, SerializationHelper.Options);
+                var message = JsonSerializer.Deserialize<T>(ea.Body.Span, SerializationUtilities.Options);
                 if (message == null)
                 {
                     logger.LogWarning("Received null message on queue {queueName}", queueName);

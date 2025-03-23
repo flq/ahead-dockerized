@@ -7,11 +7,6 @@ namespace Ahead.Web;
 
 public class QueueSender(IConnection connection, ILogger<QueueSender> logger)
 {
-    private static readonly JsonSerializerOptions Options = new(JsonSerializerDefaults.Web)
-    {
-        WriteIndented = false,
-    };
-    
     public async Task Send<T>(string queueName, T message)
     {
         var parentContext = Activity.Current?.Context ?? default;
@@ -25,7 +20,7 @@ public class QueueSender(IConnection connection, ILogger<QueueSender> logger)
             autoDelete: false, 
             arguments: null);
         
-        var body = JsonSerializer.SerializeToUtf8Bytes(message, options: Options);
+        var body = JsonSerializer.SerializeToUtf8Bytes(message, options: SerializationUtilities.Options);
 
         var properties = new BasicProperties
         {

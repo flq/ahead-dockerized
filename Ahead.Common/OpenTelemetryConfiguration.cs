@@ -7,9 +7,9 @@ using OpenTelemetry.Trace;
 
 namespace Ahead.Common;
 
-public static class Infrastructure
+public static class OpenTelemetryConfiguration
 {
-    public static IHostApplicationBuilder ConfigureOpenTelemetry(this IHostApplicationBuilder builder)
+    public static void ConfigureOpenTelemetry(this IHostApplicationBuilder builder)
     {
         /*
          * https://learn.microsoft.com/en-us/dotnet/core/diagnostics/observability-otlp-example
@@ -51,7 +51,5 @@ public static class Infrastructure
         {
             otel.UseOtlpExporter();
         }
-
-        return builder;
     }
 }
