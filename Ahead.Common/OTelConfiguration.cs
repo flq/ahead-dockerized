@@ -7,7 +7,7 @@ using OpenTelemetry.Trace;
 
 namespace Ahead.Common;
 
-public static class OpenTelemetryConfiguration
+public static class OTelConfiguration
 {
     public static void ConfigureOpenTelemetry(this IHostApplicationBuilder builder)
     {
