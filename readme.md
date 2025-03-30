@@ -6,5 +6,5 @@ This repository holds the code relevant to the blog series [starting here](https
 
 The basic premise is this: 
 
-> Considering the architecture of the product ahead, which services would one use, and how, to reduce dependncies on Azure PaaS services
+> Considering the architecture of the product ahead, which services would one use, and how, to reduce dependencies on Azure PaaS services
 to the point where one could host the product outside of Azure?
