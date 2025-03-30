@@ -1,0 +1,19 @@
+@page
+@model Ahead.Web.Pages.Index
+
+@{
+    Layout = "Shared/_Layout";
+}
+
+<h1>Do something</h1>
+
+<ul>
+    <li><a href="/api/report">Trigger Report</a></li>
+    <li><a href="/api/publish">"Publish" a Page</a></li>
+    <li><a href="/storage">See storage functionality</a></li>
+</ul>
+
+@if (Model.Message is { } message)
+{
+    <p class="notice">@message</p>
+}

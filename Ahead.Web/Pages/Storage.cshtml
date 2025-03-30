@@ -1,0 +1,35 @@
+@page
+@using Ahead.Web.Pages
+@model Ahead.Web.Pages.Storage
+
+@{
+    Layout = "Shared/_Layout";
+}
+
+@if (TempData["Message"] is { } message)
+{
+    <p class="notice">@message</p>
+}
+
+<h2>Upload a file</h2>
+
+<form method="post" enctype="multipart/form-data">
+    <input type="file" required name="@nameof(Storage.Upload)">
+    <button type="submit">Upload a File</button>
+</form>
+
+<h2>List files in the bucket</h2>
+
+@if (Model.FileLinks != null)
+{
+    <ul>
+        @foreach (var item in Model.FileLinks)
+        {
+            <li><a href="/api/file/@item.Id">@item.Id</a></li>
+        }
+    </ul>
+}
+else
+{
+    <a  href="/storage?loadFiles=true">Click to load the files</a>
+}

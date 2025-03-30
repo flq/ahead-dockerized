@@ -10,7 +10,10 @@ public interface IBlobStorage
 {
     Task<string> UploadFile(string bucketName, IFormFile formFile, CancellationToken cancellationToken = default);
     Task<string> GetPreSignedUrl(string bucketName, string objectName);
+    IAsyncEnumerable<FileLink> ListLinks(string bucketName);
 }
+
+public record struct FileLink(string Id);
 
 public class MinioConfig
 {
@@ -47,7 +50,16 @@ public class MinioBlobStorage(IOptions<MinioConfig> config) : IBlobStorage
             .WithObject(objectName)
             .WithExpiry(3600);
 
-        return await GetClient().PresignedGetObjectAsync(args);
+        var presignedGetObjectAsync = await GetClient().PresignedGetObjectAsync(args);
+        return presignedGetObjectAsync;
+    }
+    public async IAsyncEnumerable<FileLink> ListLinks(string bucketName)
+    {
+        var c = GetClient();
+        await foreach (var item in c.ListObjectsEnumAsync(new ListObjectsArgs().WithBucket(bucketName)))
+        {
+            yield return new FileLink(item.Key);
+        }
     }
 
     private async Task EnsureBucketExists(string bucketName)
@@ -68,3 +80,4 @@ public class MinioBlobStorage(IOptions<MinioConfig> config) : IBlobStorage
             .WithCredentials(Config.AccessKey, Config.SecretKey)
             .Build();
 }
+

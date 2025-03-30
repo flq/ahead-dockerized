@@ -12,4 +12,9 @@ public static class Constants
         public const string UserEvents = "events.user";
     }
 
+    public static class Storage
+    {
+        public const string StaticBucket = "test";
+    }
+
 }
