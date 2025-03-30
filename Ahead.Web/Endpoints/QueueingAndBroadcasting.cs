@@ -6,9 +6,9 @@ namespace Ahead.Web.Endpoints;
 
 public static class QueueingAndBroadcasting
 {
-    public static void AddQueueingAndBroadcasting(this IEndpointRouteBuilder app)
+    public static void AddQueueingAndBroadcasting(this IEndpointRouteBuilder routeBuilder)
     {
-        app.MapGet("/report", async (QueueSender sender, TimeProvider timeProvider) =>
+        routeBuilder.MapGet("/report", async (QueueSender sender, TimeProvider timeProvider) =>
         {
             await sender.Send(
                 Constants.QueueNames.Basic,
@@ -21,7 +21,7 @@ public static class QueueingAndBroadcasting
             return Results.Extensions.BackToHomeWithMessage("Report sent!");
         });
 
-        app.MapGet("/publish", async (BroadcastSender sender, Random random) =>
+        routeBuilder.MapGet("/publish", async (BroadcastSender sender, Random random) =>
         {
             await sender.Send(
                 Constants.BroadcastExchanges.UserEvents,

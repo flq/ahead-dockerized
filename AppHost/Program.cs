@@ -17,23 +17,23 @@ var blobStorage = builder
     .WithBindMount("../data/minio", "/data")
     .WithArgs("server", "/data", "--console-address", ":9090");
 
-/*var rabbitMq = builder
+var rabbitMq = builder
     .AddRabbitMQ("messaging", rabbitUser, rabbitPassword)
-    .WithManagementPlugin();*/
+    .WithManagementPlugin();
 
 builder.AddProject<Ahead_Web>("Frontend")
-    //.WithReference(rabbitMq)
-    //.WaitFor(rabbitMq)
+    .WithReference(rabbitMq)
+    .WaitFor(rabbitMq)
     .WaitFor(blobStorage)
     .WithEnvironment("RABBITMQ_USERNAME", rabbitUser)
     .WithEnvironment("RABBITMQ_PASSWORD", rabbitPassword)
     .WithEnvironment("MINIO_USERNAME", minioUser)
     .WithEnvironment("MINIO_PASSWORD", minioPassword);
 
-/*builder.AddProject<Ahead_Backend>("Backend")
+builder.AddProject<Ahead_Backend>("Backend")
     .WithReference(rabbitMq)
     .WithEnvironment("RABBITMQ_USERNAME", rabbitUser)
     .WithEnvironment("RABBITMQ_PASSWORD", rabbitPassword)
-    .WaitFor(rabbitMq);*/
+    .WaitFor(rabbitMq);
 
 builder.Build().Run();
