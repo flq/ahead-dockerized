@@ -37,6 +37,20 @@ public static class InfrastructureDependencies
         }
         return null;
     }
+
+    public static IResourceBuilder<ProjectResource> ReferenceAndWaitForMessagingIfAvailable(
+        this IResourceBuilder<ProjectResource> project,
+        IResourceBuilder<RabbitMQServerResource>? messagingResource,
+        IResourceBuilder<ParameterResource> userName,
+        IResourceBuilder<ParameterResource> password)
+    {
+        if (messagingResource == null) return project;
+        project.WithReference(messagingResource)
+            .WithEnvironment("RABBITMQ_USERNAME", userName)
+            .WithEnvironment("RABBITMQ_PASSWORD", password)
+            .WaitFor(messagingResource);
+        return project;
+    }
 }
 
 [Flags]

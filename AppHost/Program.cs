@@ -16,29 +16,18 @@ var blobStorage = builder
 var rabbitMq = builder
     .AddMessaging(rabbitUser, rabbitPassword, startup);
 
-var web = builder.AddProject<Ahead_Web>("Frontend");
-
-if (rabbitMq != null)
-{
-    web.WithReference(rabbitMq)
-        .WaitFor(rabbitMq)
-        .WithEnvironment("RABBITMQ_USERNAME", rabbitUser)
-        .WithEnvironment("RABBITMQ_PASSWORD", rabbitPassword);
-}
+var web = builder
+    .AddProject<Ahead_Web>("Frontend")
+    .ReferenceAndWaitForMessagingIfAvailable(rabbitMq, rabbitUser, rabbitPassword);
 
 if (blobStorage != null)
     web.WaitFor(blobStorage);
 
 if (startup.HasFlag(StartupOptions.Backend))
 {
-    var backend = builder.AddProject<Ahead_Backend>("Backend");
-    if (rabbitMq != null)
-    {
-        backend.WithReference(rabbitMq)
-            .WithEnvironment("RABBITMQ_USERNAME", rabbitUser)
-            .WithEnvironment("RABBITMQ_PASSWORD", rabbitPassword)
-            .WaitFor(rabbitMq);
-    }
+    builder
+        .AddProject<Ahead_Backend>("Backend")
+        .ReferenceAndWaitForMessagingIfAvailable(rabbitMq, rabbitUser, rabbitPassword);
 }
 
 builder.Build().Run();
