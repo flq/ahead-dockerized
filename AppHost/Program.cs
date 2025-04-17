@@ -7,8 +7,9 @@ var rabbitUser = builder.AddParameter("rabbitUsername", true);
 var rabbitPassword = builder.AddParameter("rabbitPassword", true);
 var minioUser = builder.AddParameter("minioUsername", true);
 var minioPassword = builder.AddParameter("minioPassword", true);
+var arcadeRootPassword = builder.AddParameter("arcadeDbRootPassword", true);
 
-var startup = StartupOptions.All;
+const StartupOptions startup = StartupOptions.GraphDatabase;
 
 var blobStorage = builder
     .AddBlobStorage(minioUser, minioPassword, startup);
@@ -16,12 +17,17 @@ var blobStorage = builder
 var rabbitMq = builder
     .AddMessaging(rabbitUser, rabbitPassword, startup);
 
+var graphDb = builder
+    .AddGraphDatabase(arcadeRootPassword, startup);
+
 var web = builder
     .AddProject<Ahead_Web>("Frontend")
     .ReferenceAndWaitForMessagingIfAvailable(rabbitMq, rabbitUser, rabbitPassword);
 
 if (blobStorage != null)
     web.WaitFor(blobStorage);
+if (graphDb != null)
+    web.WaitFor(graphDb);
 
 if (startup.HasFlag(StartupOptions.Backend))
 {
