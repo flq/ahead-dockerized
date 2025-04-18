@@ -1,0 +1,13 @@
+@page
+@model Ahead.Web.Pages.Graph
+
+@{
+    Layout = "Shared/_Layout";
+}
+
+@if (TempData["Message"] is { } message)
+{
+    <p class="notice">@message</p>
+}
+
+<h2>Let's take a look</h2>

@@ -26,8 +26,15 @@ var web = builder
 
 if (blobStorage != null)
     web.WaitFor(blobStorage);
-if (graphDb != null)
-    web.WaitFor(graphDb);
+
+if (graphDb.HasValue)
+{
+    var (
+        graphDbContainer, 
+        connectionString) = graphDb.Value;
+    web.WithReference(connectionString);
+    web.WaitFor(graphDbContainer);
+}
 
 if (startup.HasFlag(StartupOptions.Backend))
 {

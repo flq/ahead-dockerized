@@ -18,6 +18,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Ahead.Backend\Ahead.Backend.csproj" />
+      <ProjectReference Include="..\Ahead.Common\Ahead.Common.csproj" IsAspireProjectResource="false" />
       <ProjectReference Include="..\Ahead.Web\Ahead.Web.csproj" />
     </ItemGroup>
 

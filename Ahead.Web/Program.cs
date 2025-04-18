@@ -12,6 +12,7 @@ builder.AddQueueingAndBroadcasting();
 builder.AddBlobStorage();
 
 builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<IAheadGraphDatabase, AheadGraphDatabase>();
 builder.Services.AddSingleton<Random>(_ => new Random());
 
 var app = builder.Build();

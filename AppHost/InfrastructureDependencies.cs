@@ -1,4 +1,5 @@
 using System.Text;
+using Ahead.Common;
 
 namespace AppHost;
 
@@ -23,7 +24,7 @@ public static class InfrastructureDependencies
             .WithArgs("server", "/data", "--console-address", ":9090");
     }
     
-    public static IResourceBuilder<ContainerResource>? AddGraphDatabase(
+    public static (IResourceBuilder<ContainerResource>,IResourceBuilder<ConnectionStringResource>)? AddGraphDatabase(
         this IDistributedApplicationBuilder builder,
         IResourceBuilder<ParameterResource> arcadeRootPassword,
         StartupOptions startupOptions)
@@ -34,15 +35,31 @@ public static class InfrastructureDependencies
         javaOptions.Append($"-Darcadedb.server.rootPassword={arcadeRootPassword.Resource.Value} ");
         javaOptions.Append("-Darcadedb.server.plugins=GremlinServer:com.arcadedb.server.gremlin.GremlinServerPlugin ");
         javaOptions.Append("-Darcadedb.server.databaseDirectory=/data");
-            
-        return builder
-            .AddContainer("arcadedb", "arcadedata/arcadedb")
+
+        var connectionString = builder
+            .AddConnectionString(GraphDbConnectionString.Name,
+            b =>
+            {
+                var connectString = new GraphDbConnectionString
+                {
+                    Host = "localhost",
+                    Port = 8182,
+                    Username = "root",
+                    Password = arcadeRootPassword.Resource.Value,
+                    UseSsl = false
+                };
+                b.AppendLiteral(connectString.ToString());
+            });
+        
+        var container = builder
+            .AddContainer("graphdb", "arcadedata/arcadedb")
             .WithContainerName("ahead_graphdb")
             .WithEnvironment("JAVA_OPTS", javaOptions.ToString())
             .WithEndpoint(2480, 2480, "http", "dashboard")
             .WithEndpoint(2424, 2424, name: "db")
             .WithEndpoint(8182, 8182, name: "gremlin")
             .WithBindMount("../data/arcadedb", "/data");
+        return (container, connectionString);
     }
 
     public static IResourceBuilder<RabbitMQServerResource>? AddMessaging(
