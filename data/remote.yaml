@@ -1,0 +1,4 @@
+hosts: [host.docker.internal]  # or localhost, if --network host
+port: 8182
+username: root
+password: arcade-pa55w0rd

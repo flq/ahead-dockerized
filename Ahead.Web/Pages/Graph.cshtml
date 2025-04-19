@@ -1,4 +1,5 @@
 @page
+@using Ahead.Web.Pages
 @model Ahead.Web.Pages.Graph
 
 @{
@@ -10,4 +11,8 @@
     <p class="notice">@message</p>
 }
 
-<h2>Let's take a look</h2>
+<h2>Create a user</h2>
+<form method="post">
+    <input type="text" name="@nameof(Graph.Name)">
+    <button type="submit">Add the User</button>
+</form>

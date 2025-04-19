@@ -1,5 +1,7 @@
 bin
 obj
-data
+data/*
+!data/gremlin-server.properties
+!data/remote.yaml
 .idea
 *.user

@@ -1,5 +1,6 @@
 using Ahead.Common;
 using Gremlin.Net.Driver;
+using Gremlin.Net.Structure.IO.GraphSON;
 
 namespace Ahead.Web.Infrastructure;
 
@@ -11,7 +12,7 @@ public interface IAheadGraphDatabase
 
 public class AheadGraphDatabase : IAheadGraphDatabase
 {
-    private readonly GremlinServer server;
+    private readonly GremlinClient gremlinClient;
     
     public AheadGraphDatabase(IConfiguration configuration)
     {
@@ -21,18 +22,31 @@ public class AheadGraphDatabase : IAheadGraphDatabase
             throw new ArgumentException("Graph connection string not found");
         }
         var connection = new GraphDbConnectionString(connectionString);
-        server = new GremlinServer(
+        var server = new GremlinServer(
             connection.Host, 
             connection.Port, 
             connection.UseSsl, 
             connection.Username, 
             connection.Password);
+        gremlinClient = new GremlinClient(
+            server,
+            new GraphSON2Reader(),
+            new GraphSON2Writer(),
+            GremlinClient.GraphSON2MimeType);
     }
-    
-    public GremlinClient CreateClient() => new(server);
-    
-    public Task RunJob(IGremlinJob job) => throw new NotImplementedException();
-    public Task<T> RunJob<T>(IGremlinJob<T> job) => throw new NotImplementedException();
+
+    public async Task RunJob(IGremlinJob job) => await job.Run(new GraphContext(gremlinClient));
+    public async Task<T> RunJob<T>(IGremlinJob<T> job) => await job.Run(new GraphContext(gremlinClient));
+
+    private class GraphContext(GremlinClient client) : IGraphContext
+    {
+        
+        public async Task Run(string query)
+        {
+            await client.SubmitAsync(query);
+            var result = await client.SubmitAsync<object>("g.V().count()");
+        }
+    }
 }
 
 public interface IGremlinJob
@@ -47,5 +61,5 @@ public interface IGremlinJob<T>
 
 public interface IGraphContext
 {
-    
+    Task Run(string query);
 }

@@ -33,6 +33,7 @@ public static class InfrastructureDependencies
             return null;
         StringBuilder javaOptions = new();
         javaOptions.Append($"-Darcadedb.server.rootPassword={arcadeRootPassword.Resource.Value} ");
+        javaOptions.Append($"-Darcadedb.server.defaultDatabases=graph[root] ");
         javaOptions.Append("-Darcadedb.server.plugins=GremlinServer:com.arcadedb.server.gremlin.GremlinServerPlugin ");
         javaOptions.Append("-Darcadedb.server.databaseDirectory=/data");
 
@@ -50,15 +51,16 @@ public static class InfrastructureDependencies
                 };
                 b.AppendLiteral(connectString.ToString());
             });
-        
+
         var container = builder
             .AddContainer("graphdb", "arcadedata/arcadedb")
             .WithContainerName("ahead_graphdb")
             .WithEnvironment("JAVA_OPTS", javaOptions.ToString())
             .WithEndpoint(2480, 2480, "http", "dashboard")
             .WithEndpoint(2424, 2424, name: "db")
-            .WithEndpoint(8182, 8182, name: "gremlin")
-            .WithBindMount("../data/arcadedb", "/data");
+            .WithEndpoint(8182, 8182, scheme: "ws", name: "gremlin")
+            .WithBindMount("../data/arcadedb", "/data")
+            .WithBindMount("../data/gremlin-server.properties", "/home/arcadedb/config/gremlin-server.properties");
         return (container, connectionString);
     }
 
