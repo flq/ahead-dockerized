@@ -1,6 +1,5 @@
 using Ahead.Common;
 using Gremlin.Net.Driver;
-using Gremlin.Net.Structure.IO.GraphSON;
 
 namespace Ahead.Web.Infrastructure;
 
@@ -14,7 +13,7 @@ public class AheadGraphDatabase : IAheadGraphDatabase
 {
     private readonly GremlinClient gremlinClient;
     
-    public AheadGraphDatabase(IConfiguration configuration)
+    public AheadGraphDatabase(IConfiguration configuration, ILoggerFactory loggerFactory)
     {
         var connectionString = configuration.GetConnectionString(GraphDbConnectionString.Name);
         if (string.IsNullOrEmpty(connectionString))
@@ -28,11 +27,7 @@ public class AheadGraphDatabase : IAheadGraphDatabase
             connection.UseSsl, 
             connection.Username, 
             connection.Password);
-        gremlinClient = new GremlinClient(
-            server,
-            new GraphSON2Reader(),
-            new GraphSON2Writer(),
-            GremlinClient.GraphSON2MimeType);
+        gremlinClient = new GremlinClient(server, loggerFactory: loggerFactory);
     }
 
     public async Task RunJob(IGremlinJob job) => await job.Run(new GraphContext(gremlinClient));
