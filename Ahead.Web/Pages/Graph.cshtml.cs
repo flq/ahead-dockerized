@@ -10,10 +10,12 @@ public class Graph(IAheadGraphDatabase database) : PageModel
     
     [BindProperty]
     public string? Name { get; set; }
+
+    public IReadOnlyList<User> Users { get; set; } = [];
     
-    public Task OnGet()
+    public async Task OnGet()
     {
-        return Task.CompletedTask;
+        Users = await database.RunJob(new ListUsers());
     }
 
     public async Task OnPost(CancellationToken cancellationToken)
@@ -25,15 +27,27 @@ public class Graph(IAheadGraphDatabase database) : PageModel
         }
         await database.RunJob(new AddUser(Name));
         TempData["Message"] = "User created";
+        Users = await database.RunJob(new ListUsers());
     }
 }
 
 public class AddUser(string name) : IGremlinJob
 {
-    public async Task Run(IGraphContext graphContext)
+    public Task Run(IGraphContext graphContext) => 
+        graphContext.Run($"""g.addV("{nameof(User)}").property("{nameof(User.Name)}", "{name}")""");
+}
+
+public class ListUsers : IGremlinJob<IReadOnlyList<User>>
+{
+    public async Task<IReadOnlyList<User>> Run(IGraphContext graphContext)
     {
-        
-        await graphContext.Run($"""g.addV("User").property("Name", "{name}")""");
+        var result = 
+            await graphContext.Run(g => 
+                g.V().HasLabel(nameof(User)).ValueMap<string, object>());
+        return result
+            .Select(valueMap => new User((string)((List<object>)valueMap[nameof(User.Name)])[0]))
+            .ToList();
     }
 }
 
+public record User(string Name);

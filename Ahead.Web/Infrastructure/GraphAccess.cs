@@ -1,5 +1,9 @@
 using Ahead.Common;
 using Gremlin.Net.Driver;
+using Gremlin.Net.Driver.Remote;
+// Why we do this? Because gremlin exposes a type called T in that namespace 🤯
+using AnonymousTraversalSource = Gremlin.Net.Process.Traversal.AnonymousTraversalSource;
+using GraphTraversalSource = Gremlin.Net.Process.Traversal.GraphTraversalSource;
 
 namespace Ahead.Web.Infrastructure;
 
@@ -12,7 +16,8 @@ public interface IAheadGraphDatabase
 public class AheadGraphDatabase : IAheadGraphDatabase
 {
     private readonly GremlinClient gremlinClient;
-    
+    private readonly DriverRemoteConnection remote;
+
     public AheadGraphDatabase(IConfiguration configuration, ILoggerFactory loggerFactory)
     {
         var connectionString = configuration.GetConnectionString(GraphDbConnectionString.Name);
@@ -28,18 +33,24 @@ public class AheadGraphDatabase : IAheadGraphDatabase
             connection.Username, 
             connection.Password);
         gremlinClient = new GremlinClient(server, loggerFactory: loggerFactory);
+        remote = new DriverRemoteConnection(gremlinClient);
     }
 
-    public async Task RunJob(IGremlinJob job) => await job.Run(new GraphContext(gremlinClient));
-    public async Task<T> RunJob<T>(IGremlinJob<T> job) => await job.Run(new GraphContext(gremlinClient));
+    public async Task RunJob(IGremlinJob job) => await job.Run(new GraphContext(gremlinClient, remote));
+    public async Task<T> RunJob<T>(IGremlinJob<T> job) => await job.Run(new GraphContext(gremlinClient, remote));
 
-    private class GraphContext(GremlinClient client) : IGraphContext
+    private class GraphContext(GremlinClient client, DriverRemoteConnection remote) : IGraphContext
     {
+        public async Task<IReadOnlyList<TOut>> Run<TIn,TOut>(Func<GraphTraversalSource,Gremlin.Net.Process.Traversal.GraphTraversal<TIn,TOut>> query)
+        {
+            var traversal = AnonymousTraversalSource.Traversal().WithRemote(remote);
+            var tr = query(traversal);
+            return (IReadOnlyList<TOut>)await tr.Promise(t => t.ToList());
+        }
         
         public async Task Run(string query)
         {
             await client.SubmitAsync(query);
-            var result = await client.SubmitAsync<object>("g.V().count()");
         }
     }
 }
@@ -57,4 +68,5 @@ public interface IGremlinJob<T>
 public interface IGraphContext
 {
     Task Run(string query);
+    Task<IReadOnlyList<TOut>> Run<TIn,TOut>(Func<GraphTraversalSource,Gremlin.Net.Process.Traversal.GraphTraversal<TIn,TOut>> query);
 }
