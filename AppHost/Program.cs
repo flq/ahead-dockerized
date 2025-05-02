@@ -9,7 +9,7 @@ var minioUser = builder.AddParameter("minioUsername", true);
 var minioPassword = builder.AddParameter("minioPassword", true);
 var arcadeRootPassword = builder.AddParameter("arcadeDbRootPassword", true);
 
-const StartupOptions startup = StartupOptions.GraphDatabase;
+const StartupOptions startup = StartupOptions.All;
 
 var blobStorage = builder
     .AddBlobStorage(minioUser, minioPassword, startup);
