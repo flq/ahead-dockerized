@@ -7,7 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Aspire.RabbitMQ.Client.v7" Version="9.2.0" />
+      <PackageReference Include="Aspire.RabbitMQ.Client.v7" Version="9.2.1" />
       <PackageReference Include="Gremlin.Net" Version="3.7.3" />
       <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="9.0.4" />
       <PackageReference Include="Minio" Version="6.0.4" />
